@@ -1,0 +1,1 @@
+/tmp/openconnectd/watch IN_CLOSE_WRITE /usr/local/sbin/openconnectd $@/$#

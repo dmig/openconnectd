@@ -1,0 +1,32 @@
+#! /bin/bash
+
+CONFIGDIR=/etc/openconnect.d
+. $CONFIGDIR/openconnectd.conf
+
+SIGNAL=SIGINT
+if [[ "$1" == '-r' ]]; then
+    SIGNAL=SIGUSR2
+    shift
+fi
+
+if [ $# -lt 1 ];
+then
+  echo "Usage:"
+  echo "    `basename $0` [-r] vpn-name [vpn-name] ..."
+  echo "        -r -- quick reconnect"
+  exit 1
+fi
+
+while [ $# -gt 0 ]; do
+    name=`basename $1 .vpn`
+    file="$INFODIR/$name.pid"
+    shift
+
+    if [[ ! -e $file || ! -r $file ]]; then
+        continue;
+    fi
+
+    echo -n "Sending $SIGNAL to $name..."
+    printf "PID=%d\nSIGNAL=%s\n" `cat $file` $SIGNAL > $WATCHDIR/$name.disconnect
+    echo " done"
+done

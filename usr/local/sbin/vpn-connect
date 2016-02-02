@@ -1,0 +1,52 @@
+#! /bin/bash
+
+CONFIGDIR=/etc/openconnect.d
+. $CONFIGDIR/openconnectd.conf
+
+if [ $# -lt 1 ]; then
+  echo "Usage:"
+  echo "    `basename $0` vpn-name [vpn-name] ..."
+  exit 1
+fi
+
+if [ ! -d "$WATCHDIR" ]; then
+  mkdir -p "$WATCHDIR"
+fi
+
+while [ $# -gt 0 ]; do
+    file=$1
+    name=`basename $1`
+    shift
+
+    if [[ ! -e $file || ! -r $file ]]; then
+        echo "Error: can't read config `basename $file`"
+        continue;
+    fi
+
+    eval "`grep -E "^(host|password)=" $file`"
+    if [ -z "$host" ]; then
+        echo "Error: missing host option in `basename $file`"
+        exit 2;
+    fi
+    if [ -z "$password" ]; then
+        echo "Error: missing password option in `basename $file`"
+        exit 2;
+    fi
+
+    config=`mktemp`
+    grep -Ev "^password=" $file > $config
+
+    echo -n "Authenticating $name..."
+    authinfo="`echo -n $password | openconnect -q --libproxy --non-inter --passwd-on-stdin --authenticate --config=$config`"
+    echo " done"
+
+    rm $config
+
+    if [[ -z "$authinfo" ]]; then
+        echo "Error: failed to authenticate or bad option in `basename $file`"
+        exit 3;
+    fi
+
+    TASKFILE="$WATCHDIR/`basename $file .vpn`.connect"
+    echo "$authinfo" > $TASKFILE # quotes required to preserve line breaks
+done

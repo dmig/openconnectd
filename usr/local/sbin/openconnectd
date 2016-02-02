@@ -1,0 +1,94 @@
+#! /bin/bash
+
+LOG=echo
+if [[ "$1" == '-s' ]]; then
+    LOG="logger -T `basename $0`"
+    shift
+fi
+
+function log {
+    cmd="$LOG "
+    while [ $# -gt 0 ]; do
+        cmd="$cmd $1"
+        shift
+    done
+    eval $cmd
+}
+
+if [[ $# < 1 ]]; then
+    echo "Usage:"
+    echo "  `basename $0` [-s] {vpn.connect|vpn.disconnect}"
+    echo "      -s -- output to syslog"
+    exit 1
+fi
+
+if [ ! -r $1 ]; then
+    log "Error: $1 is not readable"
+    exit 2
+fi
+
+CONFIGDIR=/etc/openconnect.d
+. $CONFIGDIR/openconnectd.conf
+
+
+if [ ! -d "$INFODIR" ]; then
+  mkdir -p "$INFODIR"
+fi
+
+# Handle disconnect
+t=`basename $1`
+name=`basename $1 .disconnect`
+if [ "$t" != "$name" ]; then
+    # import task file
+    # expect variables:
+    # PID
+    # SIGNAL
+    . $1
+    rm -f $1
+
+    kill -s $SIGNAL $PID && rm -f "$INFODIR/$name.info"
+
+    exit 0;
+fi
+
+# Handle connect
+
+# import task file
+# expected variables:
+# FINGERPRINT
+# COOKIE
+# HOST
+. $1
+
+rm -f $1
+
+if [[ -z "$FINGERPRINT" || -z "$COOKIE" || -z "$HOST" ]]; then
+    log "Error: FINGERPRINT, COOKIE or HOST not defined in $1"
+    exit 3
+fi
+
+IFPREFIX=tun
+
+vpnname=`basename $1 .connect`
+PIDFILE="$INFODIR/$vpnname.pid"
+
+if [ -e "$CONFIGDIR/$vpnname.vpn" ]; then
+    config="--config=$CONFIGDIR/$vpnname.vpn"
+fi
+
+index=0
+while [[ -e /sys/class/net/$IFPREFIX$index ]]; do
+    let $((index++))
+done
+ifname=$IFPREFIX$index
+
+openconnect -bl $config --libproxy --non-inter \
+    -i $ifname --pid-file=$PIDFILE -C $COOKIE --servercert=$FINGERPRINT $HOST
+
+ret=$?
+
+if [ $ret -eq "0" ]; then
+    vpninfo="$INFODIR/$vpnname.info"
+
+    printf "name=%s\nhost=%s\ninterface=%s\npidfile=%s\n" $vpnname $HOST $ifname $PIDFILE > $vpninfo
+fi

@@ -1,0 +1,42 @@
+--- openconnect-7.06-original/openconnect.8.in	2015-02-28 23:14:03.000000000 +0700
++++ openconnect-7.06/openconnect.8.in	2015-10-28 13:57:01.730350355 +0700
+@@ -17,6 +17,7 @@
+ .OP \-\-force\-dpd interval
+ .OP \-g,\-\-usergroup group
+ .OP \-h,\-\-help
++.OP \-H,\-\-host HOST
+ .OP \-\-http\-auth methods
+ .OP \-i,\-\-interface ifname
+ .OP \-l,\-\-syslog
+@@ -63,7 +64,7 @@
+ .OP \-\-servercert sha1
+ .OP \-\-useragent string
+ .OP \-\-os string
+-.B [https://]\fIserver\fB[:\fIport\fB][/\fIgroup\fB]
++.B [[https://]\fIserver\fB[:\fIport\fB][/\fIgroup\fB]]
+ .YS
+ 
+ .SH DESCRIPTION
+@@ -171,6 +172,13 @@
+ .B \-h,\-\-help
+ Display help text
+ .TP
++.B \-H,\-\-host=HOST
++Connect to
++.I HOST
++\[char46] This option is alternative to last command line parameter. Useful for config files to pass via
++.B \-\-config
++option.
++.TP
+ .B \-\-http\-auth=METHODS
+ Use only the specified methods for HTTP authentication to a server.  By default,
+ only Negotiate, NTLM and Digest authentication are enabled. Basic authentication
+@@ -244,7 +252,7 @@
+ .I fsid
+ of the file system on which it is stored. The
+ .I fsid
+-is obtained from the 
++is obtained from the
+ .BR statvfs (2)
+ or
+ .BR statfs (2)

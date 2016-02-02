@@ -1,0 +1,80 @@
+--- openconnect-7.06-original/main.c	2015-02-28 23:14:03.000000000 +0700
++++ openconnect-7.06/main.c	2015-10-01 23:31:18.564231211 +0700
+@@ -217,6 +217,7 @@
+ 	OPTION("cert-expire-warning", 1, 'e'),
+ 	OPTION("usergroup", 1, 'g'),
+ 	OPTION("help", 0, 'h'),
++	OPTION("host", 1, 'H'),
+ 	OPTION("http-auth", 1, OPT_HTTP_AUTH),
+ 	OPTION("interface", 1, 'i'),
+ 	OPTION("mtu", 1, 'm'),
+@@ -702,7 +703,7 @@
+
+ static void usage(void)
+ {
+-	printf(_("Usage:  openconnect [options] <server>\n"));
++	printf(_("Usage:  openconnect [options] [<server>]\n"));
+ 	printf(_("Open client for Cisco AnyConnect VPN, version %s\n\n"), openconnect_version_str);
+ 	print_build_opts();
+ 	printf("      --config=CONFIGFILE         %s\n", _("Read options from config file"));
+@@ -720,6 +721,7 @@
+ 	printf("      --force-dpd=INTERVAL        %s\n", _("Set minimum Dead Peer Detection interval"));
+ 	printf("  -g, --usergroup=GROUP           %s\n", _("Set login usergroup"));
+ 	printf("  -h, --help                      %s\n", _("Display help text"));
++	printf("  -H, --host=SERVER               %s\n", _("Connect to SERVER, alternative to last parameter"));
+ 	printf("  -i, --interface=IFNAME          %s\n", _("Use IFNAME for tunnel interface"));
+ #ifndef _WIN32
+ 	printf("  -l, --syslog                    %s\n", _("Use syslog for progress messages"));
+@@ -846,9 +848,9 @@
+ 	if (!config_file) {
+ 		opt = getopt_long(argc, argv,
+ #ifdef _WIN32
+-				  "C:c:Dde:g:hi:k:m:P:p:Q:qs:u:Vvx:",
++				  "C:c:Dde:g:hH:i:k:m:P:p:Q:qs:u:Vvx:",
+ #else
+-				  "bC:c:Dde:g:hi:k:lm:P:p:Q:qSs:U:u:Vvx:",
++				  "bC:c:Dde:g:hH:i:k:lm:P:p:Q:qSs:U:u:Vvx:",
+ #endif
+ 				  long_options, NULL);
+
+@@ -934,6 +936,7 @@
+ {
+ 	struct openconnect_info *vpninfo;
+ 	char *urlpath = NULL;
++	char *url = NULL;
+ 	const char *compr = "";
+ 	char *proxy = getenv("https_proxy");
+ 	char *vpnc_script = NULL, *ifname = NULL;
+@@ -1165,6 +1168,14 @@
+ 			break;
+ 		case 'h':
+ 			usage();
++		case 'H':
++			url = dup_config_arg();
++
++			// ignore option value in case of error
++			openconnect_parse_url(vpninfo, url);
++
++			free(url);
++			break;
+ 		case 'i':
+ 			ifname = dup_config_arg();
+ 			break;
+@@ -1313,7 +1324,7 @@
+ 	if (optind < argc - 1) {
+ 		fprintf(stderr, _("Too many arguments on command line\n"));
+ 		usage();
+-	} else if (optind > argc - 1) {
++	} else if ((optind > argc - 1) && !vpninfo->hostname) {
+ 		fprintf(stderr, _("No server specified\n"));
+ 		usage();
+ 	}
+@@ -1368,7 +1379,7 @@
+ 		exit(1);
+
+ 	if (!vpninfo->hostname) {
+-		char *url = strdup(argv[optind]);
++		url = strdup(argv[optind]);
+
+ 		if (openconnect_parse_url(vpninfo, url))
+ 			exit(1);

@@ -1,6 +1,6 @@
 #! /bin/bash
 
-CONFIGDIR=/etc/openconnect.d
+CONFIGDIR=/etc/openconnectd
 . $CONFIGDIR/openconnectd.conf
 
 if [ $# -lt 1 ]; then

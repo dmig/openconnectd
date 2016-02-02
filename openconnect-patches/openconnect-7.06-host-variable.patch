@@ -1,0 +1,16 @@
+diff -ur openconnect-7.06-original/main.c openconnect-7.06/main.c
+--- openconnect-7.06-original/main.c	2015-02-28 23:14:03.000000000 +0700
++++ openconnect-7.06/main.c	2015-10-01 21:51:16.487987440 +0700
+@@ -1397,7 +1397,11 @@
+ 	if (cookieonly == 3) {
+ 		/* --authenticate */
+ 		printf("COOKIE='%s'\n", vpninfo->cookie);
+-		printf("HOST='%s'\n", openconnect_get_hostname(vpninfo));
++		if (vpninfo->port == 443) {
++			printf("HOST='%s'\n", openconnect_get_hostname(vpninfo));
++		} else {
++			printf("HOST='%s:%d'\n", openconnect_get_hostname(vpninfo), vpninfo->port);
++		}
+ 		printf("FINGERPRINT='%s'\n",
+ 		       openconnect_get_peer_cert_hash(vpninfo));
+ 		openconnect_vpninfo_free(vpninfo);

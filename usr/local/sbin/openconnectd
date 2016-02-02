@@ -27,7 +27,7 @@ if [ ! -r $1 ]; then
     exit 2
 fi
 
-CONFIGDIR=/etc/openconnect.d
+CONFIGDIR=/etc/openconnectd
 . $CONFIGDIR/openconnectd.conf
 
 
